@@ -10,10 +10,10 @@ int analog;
  
 ESP8266WebServer server(80);
  
-// Serving Hello world
-void getHelloWord() {
+
+void getspannung() {
   analog=analogRead(A0);
-    server.send(200, "text/json", "{\"name\": "+String(analog)+"}");
+    server.send(200, "text/json", "{\"spannung\": "+String(analog)+"}");
 }
  
 // Define routing
@@ -22,7 +22,7 @@ void restServerRouting() {
         server.send(200, F("text/html"),
             F("Welcome to the REST Web Server"));
     });
-    server.on(F("/helloWorld"), HTTP_GET, getHelloWord);
+    server.on(F("/spannung"), HTTP_GET, getspannung);
 }
  
 // Manage not found URL
