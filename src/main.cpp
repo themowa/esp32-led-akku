@@ -20,7 +20,7 @@ IPAddress subnet(255, 255, 255, 0);
 // LED settings
 const int numLeds = 60; 
 
-const byte dataPin = 32;
+const byte dataPin = 27;
 
 CRGB leds[numLeds];
 
