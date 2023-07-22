@@ -7,8 +7,12 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 #include <Arduino.h>
 #include <FastLED.h>
 
-// Wifi settings
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 
+// Wifi settings
 const char* ssid = "Ravescape";
 const char* password = "20857150976705574946";
 //const char* ssid = "Sentilo 3 Unten";
@@ -16,6 +20,8 @@ const char* password = "20857150976705574946";
 IPAddress local_ip(192, 168, 178, 2);
 IPAddress gateway(192, 168, 178, 1);
 IPAddress subnet(255, 255, 255, 0);
+
+WebServer server(80);
 
 // LED settings
 const int numLeds = 60; 
@@ -30,19 +36,51 @@ const int numberOfChannels = numLeds * 3; // Total number of channels you want t
 ArtnetWifi artnet;
 const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, some software send out artnet first universe as 0.
 
+// Analog Read
+int analog;
+
+void getspannung() {
+  analog=analogRead(A0);
+    server.send(200, "text/json", "{\"spannung\": "+String(analog)+"}");
+}
+
 // Check if we got all universes
 const int maxUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 : 0);
 bool universesReceived[maxUniverses];
 bool sendFrame = 1;
 int previousDataLength = 0;
 
+// Define routing
+void restServerRouting() {
+    server.on("/", HTTP_GET, []() {
+        server.send(200, F("text/html"),
+            F("Welcome to the REST Web Server"));
+    });
+    server.on(F("/spannung"), HTTP_GET, getspannung);
+}
+
+// Manage not found URL
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+}
 
 // connect to wifi – returns true if successful or false if not
 boolean ConnectWifi(void)
 {
   boolean state = true;
   int i = 0;
-
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   WiFi.config(local_ip, gateway, subnet);
   Serial.println("");
@@ -70,6 +108,17 @@ boolean ConnectWifi(void)
     Serial.println("Connection failed.");
   }
 
+  if (MDNS.begin("esp8266")) {
+    Serial.println("MDNS responder started");
+  }
+
+  // Set server routing
+  restServerRouting();
+  // Set not found response
+  server.onNotFound(handleNotFound);
+  // Start server
+  server.begin();
+  Serial.println("HTTP server started");
   return state;
 }
 
@@ -141,6 +190,8 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
   }
 }
 
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -157,4 +208,5 @@ void loop()
 {
   // we call the read function inside the loop
   artnet.read();
+  server.handleClient();
 }
