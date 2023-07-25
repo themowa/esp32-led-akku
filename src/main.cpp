@@ -40,7 +40,7 @@ const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, s
 int analog;
 
 void getspannung() {
-  analog=analogRead(A0);
+  analog=analogRead(33);
     server.send(200, "text/json", "{\"spannung\": "+String(analog)+"}");
 }
 

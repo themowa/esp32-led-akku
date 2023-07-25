@@ -1,8 +1,8 @@
 import time
 import requests
 from threading import *
-from gui_stuff.init_gui import start
-from gui_stuff.main_window import start_main
+from init_gui import start
+from main_window import start_main
 import os
 import subprocess
 import ast
@@ -24,7 +24,7 @@ def get_data(adress):
         response = requests.get(adress,timeout=1)
     except requests.exceptions.ConnectTimeout:
         return "timeout"
-
+    
     return ast.literal_eval(response.text)
 
 def threading_everithing_else():
@@ -53,7 +53,7 @@ def get_ping(ip_val,number,cl):
                     cl.list_loss[number] = cl.list_loss[number] + 1
                     cl.list_spannung[number] = "x"
                 else:
-                    cl.list_spannung[number] =a["spannung"]
+                    cl.list_spannung[number] = round(a["spannung"]/4095*3.3/100*156*0.947,1)
 
 
 def none_gui(x):
