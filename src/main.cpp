@@ -10,7 +10,10 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 #include <ESPmDNS.h>
+
+#define ONBOARD_LED  2
 
 // Wifi settings
 const char* ssid = "Ravescape";
@@ -164,7 +167,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
   {
     if (universesReceived[i] == 0)
     {
-      //Serial.println("Broke");
+      Serial.println("Broke");
       sendFrame = 0;
       break;
     }
@@ -190,7 +193,81 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
   }
 }
 
+// Sleep timer
+void sleepTimer(int artnet_status)
+{
+  static int count;
+  static int count_sleeps;
+  count++;
+  if(artnet_status != 0)
+  {
+    // Reset counters if artnet data is recieved
+    count = 0;
+    count_sleeps = 0;
+    return;
+  }
 
+  if(count >= 15000)
+  {
+    // Reset counter. After wakeup: activate WiFi for 30 sec
+    count = 0;
+    
+    switch (count_sleeps)
+    {
+    case 0:
+      // Sleep for 30 Seconds
+      count_sleeps = 1;
+
+      // Show red light on one LED to indicate sleeping
+      leds[0] = CRGB(5, 0, 0);
+      FastLED.show();
+
+      esp_sleep_enable_timer_wakeup(30 * 1000 * 1000);
+      esp_light_sleep_start();
+
+      // Show green light on one LED to indicate search
+      leds[0] = CRGB(0, 5, 0);
+      FastLED.show();
+      break;
+    
+    case 1:
+      // Sleep for 60 Seconds
+      count_sleeps = 2;
+
+      // Show red light on one LED to indicate sleeping
+      leds[0] = CRGB(5, 0, 0);
+      FastLED.show();
+
+      esp_sleep_enable_timer_wakeup(60 * 1000 * 1000);
+      esp_light_sleep_start();
+
+      // Show green light on one LED to indicate search
+      leds[0] = CRGB(0, 5, 0);
+      FastLED.show();
+      break;
+
+    case 2:
+      // Sleep for 5 minutes
+      count_sleeps = 2;
+
+      // Show red light on one LED to indicate sleeping
+      leds[0] = CRGB(5, 0, 0);
+      FastLED.show();
+
+      esp_sleep_enable_timer_wakeup(300 * 1000 * 1000);
+      esp_light_sleep_start();
+
+      // Show green light on one LED to indicate search
+      leds[0] = CRGB(0, 5, 0);
+      FastLED.show();
+      break;
+
+    default:
+      break;
+    }
+    
+  }
+}
 
 void setup()
 {
@@ -204,9 +281,12 @@ void setup()
   artnet.setArtDmxCallback(onDmxFrame);
 }
 
+int artnet_retval;
+
 void loop()
 {
   // we call the read function inside the loop
-  artnet.read();
+  artnet_retval = artnet.read();
+  sleepTimer(artnet_retval);
   server.handleClient();
 }
