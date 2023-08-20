@@ -13,14 +13,10 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 #include <esp_wifi.h>
 #include <ESPmDNS.h>
 
-#define ONBOARD_LED  2
-
 // Wifi settings
 const char* ssid = "Ravescape";
 const char* password = "20857150976705574946";
-//const char* ssid = "Sentilo 3 Unten";
-//const char* password = "14270182658587895477";
-IPAddress local_ip(192, 168, 178, 2);
+IPAddress local_ip(192, 168, 178, 99);
 IPAddress gateway(192, 168, 178, 1);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -28,11 +24,8 @@ WebServer server(80);
 
 // LED settings
 const int numLeds = 60; 
-
 const byte dataPin = 27;
-
 CRGB leds[numLeds];
-
 const int numberOfChannels = numLeds * 3; // Total number of channels you want to receive (1 led = 3 channels)
 
 // Art-Net settings
@@ -207,11 +200,19 @@ void sleepTimer(int artnet_status)
     return;
   }
 
+  // After 15 seconds of no signal go to sleep
   if(count >= 15000)
   {
     // Reset counter. After wakeup: activate WiFi for 30 sec
     count = 0;
-    
+
+    // Turn off all LEDs 
+    for(int i = 0; i < numLeds; i++)
+    {
+      leds[i] = CRGB(0,0,0);
+    }
+    FastLED.show();
+
     switch (count_sleeps)
     {
     case 0:
@@ -222,8 +223,11 @@ void sleepTimer(int artnet_status)
       leds[0] = CRGB(5, 0, 0);
       FastLED.show();
 
+      WiFi.disconnect(true, true);
       esp_sleep_enable_timer_wakeup(30 * 1000 * 1000);
       esp_light_sleep_start();
+      ConnectWifi();
+      artnet.begin();
 
       // Show green light on one LED to indicate search
       leds[0] = CRGB(0, 5, 0);
@@ -238,8 +242,11 @@ void sleepTimer(int artnet_status)
       leds[0] = CRGB(5, 0, 0);
       FastLED.show();
 
+      WiFi.disconnect(true, true);
       esp_sleep_enable_timer_wakeup(60 * 1000 * 1000);
       esp_light_sleep_start();
+      ConnectWifi();
+      artnet.begin();
 
       // Show green light on one LED to indicate search
       leds[0] = CRGB(0, 5, 0);
@@ -254,8 +261,11 @@ void sleepTimer(int artnet_status)
       leds[0] = CRGB(5, 0, 0);
       FastLED.show();
 
+      WiFi.disconnect(true, true);
       esp_sleep_enable_timer_wakeup(300 * 1000 * 1000);
       esp_light_sleep_start();
+      ConnectWifi();
+      artnet.begin();
 
       // Show green light on one LED to indicate search
       leds[0] = CRGB(0, 5, 0);
@@ -271,7 +281,6 @@ void sleepTimer(int artnet_status)
 
 void setup()
 {
-  Serial.begin(115200);
   ConnectWifi();
   artnet.begin();
   FastLED.addLeds<WS2812, dataPin, GRB>(leds, numLeds);
