@@ -242,4 +242,5 @@
  C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_wifi/include/esp_private/wifi_os_adapter.h \
  C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_wifi/include/esp_wifi_default.h \
  C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src/ESPmDNS.h \
- C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/mdns/include/mdns.h
+ C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/mdns/include/mdns.h \
+ C:/Users/Moritz/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src/Preferences.h

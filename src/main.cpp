@@ -13,6 +13,8 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 #include <esp_wifi.h>
 #include <ESPmDNS.h>
 
+#include <Preferences.h>
+
 // Wifi settings
 const char* ssid = "Ravescape";
 const char* password = "20857150976705574946";
@@ -32,6 +34,55 @@ const int numberOfChannels = numLeds * 3; // Total number of channels you want t
 ArtnetWifi artnet;
 const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, some software send out artnet first universe as 0.
 
+// EEPROM für allwhite
+Preferences mySketchPrefs;
+
+void allWhiteStartup()
+{
+// Initialize Namespace
+    mySketchPrefs.begin("Prefs", false);
+    Serial.println("Namespace initialized");
+
+    bool doesExist = mySketchPrefs.isKey("switch");
+    if(doesExist)
+    {
+      Serial.println("All white mode");
+      
+      // Turn on all white forever
+      mySketchPrefs.remove("switch");
+      for(int i=0; i<numLeds; i++)
+      {
+        leds[i] = CRGB(150, 150, 150);
+      }
+      FastLED.show();
+      while(1);
+    }
+    else
+    {
+      // Create flag
+      mySketchPrefs.putBool("switch", true);
+      Serial.println("Key created");
+    }
+}
+void allWhiteTimer()
+{
+  static int count;
+  static bool normal_operation = false;
+  count++;
+
+  if(normal_operation)
+  {
+    return;
+  }
+
+  // After 3 seconds remove the flag
+  if(count >= 3000)
+  {
+    Serial.println("begin normal operation");
+    mySketchPrefs.remove("switch");
+    normal_operation = true;
+  }
+}
 // Analog Read
 int analog;
 
@@ -174,8 +225,6 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
       leds[led] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
   }
 
-
-  
   previousDataLength = length;
 
   if (sendFrame)
@@ -281,9 +330,11 @@ void sleepTimer(int artnet_status)
 
 void setup()
 {
+  Serial.begin(115200);
+  FastLED.addLeds<WS2812, dataPin, GRB>(leds, numLeds);
+  allWhiteStartup();
   ConnectWifi();
   artnet.begin();
-  FastLED.addLeds<WS2812, dataPin, GRB>(leds, numLeds);
   initTest();
 
   // this will be called for each packet received
@@ -295,6 +346,7 @@ int artnet_retval;
 void loop()
 {
   // we call the read function inside the loop
+  allWhiteTimer();
   artnet_retval = artnet.read();
   sleepTimer(artnet_retval);
   server.handleClient();
