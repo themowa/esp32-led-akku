@@ -18,7 +18,7 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 // Wifi settings
 const char* ssid = "Ravescape";
 const char* password = "20857150976705574946";
-IPAddress local_ip(192, 168, 178, 99);
+IPAddress local_ip(192, 168, 178, 102);
 IPAddress gateway(192, 168, 178, 1);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -36,6 +36,9 @@ const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, s
 
 // EEPROM für allwhite
 Preferences mySketchPrefs;
+
+//adc correction factor
+const float adc_correct=1/743.589*0.9844;
 
 void allWhiteStartup()
 {
@@ -84,10 +87,10 @@ void allWhiteTimer()
   }
 }
 // Analog Read
-int analog;
+float analog;
 
 void getspannung() {
-  analog=analogRead(33);
+  analog=analogRead(33)*adc_correct;
     server.send(200, "text/json", "{\"spannung\": "+String(analog)+"}");
 }
 
@@ -171,22 +174,46 @@ boolean ConnectWifi(void)
 
 void initTest()
 {
-  for (int i = 0 ; i < numLeds ; i++) {
+  float analog;
+  int numLeds2;
+  analog=analogRead(33)*adc_correct;
+    Serial.println(analog);
+
+  if(analog<=3.5){
+    numLeds2=3;
+  }
+    if(analog<3.7){
+    numLeds2=13;
+  }
+  else if(analog<3.8){
+    numLeds2=24;
+  }
+  else if(analog<3.9){
+    numLeds2=36;
+  }
+  else if(analog<4.0){
+    numLeds2=48;
+  }
+   else{
+    numLeds2=60;
+  } 
+
+  for (int i = 0 ; i < numLeds2 ; i++) {
     leds[i] = CRGB(127, 0, 0);
   }
   FastLED.show();
   delay(500);
-  for (int i = 0 ; i < numLeds ; i++) {
+  for (int i = 0 ; i < numLeds2 ; i++) {
     leds[i] = CRGB(0, 127, 0);
   }
   FastLED.show();
   delay(500);
-  for (int i = 0 ; i < numLeds ; i++) {
+  for (int i = 0 ; i < numLeds2 ; i++) {
     leds[i] = CRGB(0, 0, 127);
   }
   FastLED.show();
   delay(500);
-  for (int i = 0 ; i < numLeds ; i++) {
+  for (int i = 0 ; i < numLeds2 ; i++) {
     leds[i] = CRGB(0, 0, 0);
   }
   FastLED.show();
