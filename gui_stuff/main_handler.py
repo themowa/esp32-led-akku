@@ -53,7 +53,7 @@ def get_ping(ip_val,number,cl):
                     cl.list_loss[number] = cl.list_loss[number] + 1
                     cl.list_spannung[number] = "x"
                 else:
-                    cl.list_spannung[number] = round(a["spannung"]/4095*3.3/100*156*0.947,1)
+                    cl.list_spannung[number] = round(a["spannung"],1)
 
 
 def none_gui(x):
